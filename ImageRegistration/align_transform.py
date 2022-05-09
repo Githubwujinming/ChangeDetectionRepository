@@ -288,12 +288,17 @@ class Align():
                 # 匹配
                 bf = cv2.BFMatcher()
                 matches = bf.knnMatch(des1, des2, k=2)
-
+                good = []
+                # 舍弃大于0.7的匹配,初步筛除
+                for m, n in matches:
+                    if m.distance < RATIO * n.distance:
+                        good.append(m)
+                
                 # 剔除误匹配
-                tp1 = np.float32([kp1[m[0].queryIdx].pt
-                                for m in matches]).reshape(-1, 1, 2)
-                tp2 = np.float32([kp2[m[0].trainIdx].pt
-                                for m in matches]).reshape(-1, 1, 2)  
+                tp1 = np.float32([kp1[m.queryIdx].pt
+                                for m in good]).reshape(-1, 1, 2)
+                tp2 = np.float32([kp2[m.trainIdx].pt
+                                for m in good]).reshape(-1, 1, 2)  
                 M, mask = cv2.findHomography(tp1, tp2, cv2.RANSAC, 0.1)
                 matchmask = mask.ravel().tolist()
                 pnum = matchmask.count(1)
