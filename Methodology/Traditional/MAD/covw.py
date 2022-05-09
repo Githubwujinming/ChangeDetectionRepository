@@ -10,3 +10,6 @@ def covw(center_X, center_Y, w):
     dis = np.dot(V, V.T) / sum_w * (n / (n - 1))
 
     return dis
+
+
+

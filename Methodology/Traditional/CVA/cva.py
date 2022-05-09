@@ -1,7 +1,12 @@
 import numpy as np
 import imageio
-import gdal
+from osgeo import gdal
 import time
+import sys
+import os
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(base_dir)
+# sys.path.append("D:/Documents/jianguoyun/实验室课题/无人机场景算法/cd-uav/ChangeDetectionRepository")
 from Methodology.util.cluster_util import otsu
 from Methodology.util.data_prepro import stad_img
 
@@ -18,8 +23,8 @@ def CVA(img_X, img_Y, stad=False):
 
 
 def main():
-    data_set_X = gdal.Open('../../../Dataset/Landsat/Taizhou/2000TM')  # data set X
-    data_set_Y = gdal.Open('../../../Dataset/Landsat/Taizhou/2003TM')  # data set Y
+    data_set_X = gdal.Open('D:/Documents/jianguoyun/实验室课题/无人机场景算法/cd-uav/before/DJI_20220506101539_0085_Z.JPG')  # data set X
+    data_set_Y = gdal.Open('D:/Documents/jianguoyun/实验室课题/无人机场景算法/cd-uav/after/DJI_20220506105215_0086_Z.JPG')  # data set Y
 
     img_width = data_set_X.RasterXSize  # image width
     img_height = data_set_X.RasterYSize  # image height

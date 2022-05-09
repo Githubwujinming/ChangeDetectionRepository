@@ -2,18 +2,23 @@
 Python implementation of IRMAD
 A. A. Nielsen, “The regularized iteratively reweighted MAD method for change detection in multi- and hyperspectral data,” IEEE Trans. Image Process., vol. 16, no. 2, pp. 463–478, 2007.
 '''
-import gdal
+from osgeo import gdal
 import numpy as np
 from numpy.linalg import inv, eig
 from scipy.stats import chi2
 
-from Methodology.Traditional.MAD.covw import covw
+from covw import covw
 import time
 from sklearn.cluster import KMeans
 import imageio
+import os
+import cv2
+import sys
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(base_dir)
+from ImageRegistration.align_transform import Align
 
-
-def IRMAD(img_X, img_Y, max_iter=50, epsilon=1e-3):
+def IRMAD(img_X, img_Y, max_iter=150, epsilon=1e-3):
     bands_count_X, num = img_X.shape
 
     weight = np.ones((1, num))  # (1, height * width)
@@ -101,15 +106,25 @@ def get_binary_change_map(data):
 
 
 if __name__ == '__main__':
-    data_set_X = gdal.Open('../../../Dataset/Landsat/Taizhou/2000TM')  # data set X
-    data_set_Y = gdal.Open('../../../Dataset/Landsat/Taizhou/2003TM')  # data set Y
+    # use gdal
+    # data_set_X = gdal.Open('DJI_20220506101539_0085_Z.JPG')  # data set X before
+    # data_set_Y = gdal.Open('DJI_20220506105215_0086_Z.JPG')  # data set Y after
+    # img_width = data_set_X.RasterXSize  # image width
+    # img_height = data_set_X.RasterYSize  # image height
+    # img_x = data_set_X.ReadAsArray(0, 0, img_width, img_height).transpose(1,2,0)
+    # img_y = data_set_Y.ReadAsArray(0, 0, img_width, img_height).transpose(1,2,0)
+    
+    # al = Align(None, None, threshold=1)
+    # data_set_X, data_set_Y = al.align_images(img_x, img_y)
+    # img_X = data_set_X.transpose(2, 0, 1)
+    # img_Y= data_set_Y.transpose(2, 0, 1)
 
-    img_width = data_set_X.RasterXSize  # image width
-    img_height = data_set_X.RasterYSize  # image height
-
-    img_X = np.reshape(data_set_X.ReadAsArray(0, 0, img_width, img_height), (-1, img_height, img_width))
-    img_Y = np.reshape(data_set_Y.ReadAsArray(0, 0, img_width, img_height), (-1, img_height, img_width))
-
+    # use cv2 , only rgb
+    al = Align('DJI_20220506101539_0085_Z.JPG', 'DJI_20220506105215_0086_Z.JPG', threshold=1)
+    data_set_X, data_set_Y = al.align_img_patch()
+    img_X = data_set_X.transpose(2, 0, 1)
+    img_Y = data_set_Y.transpose(2, 0, 1)
+    #-----------------
     channel, img_height, img_width = img_X.shape
 
     tic = time.time()
@@ -118,12 +133,12 @@ if __name__ == '__main__':
     img_Y = np.reshape(img_Y, (channel, -1))
     # when max_iter is set to 1, IRMAD becomes MAD
     mad, can_coo, mad_var, ev_1, ev_2, sigma_11, sigma_22, sigma_12, chi2, noc_weight = IRMAD(img_X, img_Y,
-                                                                                              max_iter=1,
+                                                                                              max_iter=50,
                                                                                               epsilon=1e-3)
     sqrt_chi2 = np.sqrt(chi2)
 
     k_means_bcm = get_binary_change_map(sqrt_chi2)
     k_means_bcm = np.reshape(k_means_bcm, (img_height, img_width))
-    imageio.imwrite('IRMAD_Taizhou.png', k_means_bcm)
+    imageio.imwrite('IRMAD.png', k_means_bcm)
     toc = time.time()
     print(toc - tic)

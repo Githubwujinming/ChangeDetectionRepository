@@ -3,13 +3,18 @@ Slow feature analysis
 C. Wu, B. Du, and L. Zhang, “Slow feature analysis for change detection in multispectral imagery,” IEEE Trans. Geosci. Remote Sens., vol. 52, no. 5, pp. 2858–2874, 2014.
 """
 
+import os
+import sys
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(base_dir)
 import numpy as np
 from scipy.linalg import eig
 from scipy.stats import chi2
 from sklearn.cluster import KMeans
 
+from ImageRegistration.align_transform import Align
 from Methodology.util.cluster_util import otsu
-import gdal
+from osgeo import gdal
 import time
 import imageio
 
@@ -138,14 +143,19 @@ class ISFA(object):
 
 
 def main():
-    data_set_X = gdal.Open('../../../Dataset/Landsat/Taizhou/2000TM')  # data set X
-    data_set_Y = gdal.Open('../../../Dataset/Landsat/Taizhou/2003TM')  # data set Y
+    # data_set_X = gdal.Open('img1.jpg')  # data set X
+    # data_set_Y = gdal.Open('img2.jpg')  # data set Y
 
-    img_width = data_set_X.RasterXSize  # image width
-    img_height = data_set_X.RasterYSize  # image height
+    # img_width = data_set_X.RasterXSize  # image width
+    # img_height = data_set_X.RasterYSize  # image height
 
-    img_X = data_set_X.ReadAsArray(0, 0, img_width, img_height)
-    img_Y = data_set_Y.ReadAsArray(0, 0, img_width, img_height)
+    # img_X = data_set_X.ReadAsArray(0, 0, img_width, img_height)
+    # img_Y = data_set_Y.ReadAsArray(0, 0, img_width, img_height)
+
+    al = Align('DJI_20220506101539_0085_Z.JPG', 'DJI_20220506105215_0086_Z.JPG', threshold=1)
+    data_set_X, data_set_Y = al.align_img_patch()
+    img_X = data_set_X.transpose(2, 0, 1)
+    img_Y = data_set_Y.transpose(2, 0, 1)
 
     channel, img_height, img_width = img_X.shape
     tic = time.time()
@@ -158,7 +168,7 @@ def main():
     thre = otsu(sqrt_chi2)
     bcm[sqrt_chi2 > thre] = 255
     bcm = np.reshape(bcm, (img_height, img_width))
-    imageio.imwrite('ISFA_Taizhou.png', bcm)
+    imageio.imwrite('ISFA_gdal.png', bcm)
     toc = time.time()
     print(toc - tic)
 

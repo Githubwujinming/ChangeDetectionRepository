@@ -1,0 +1,7 @@
+numpy
+matplotlib
+scipy
+sklearn
+imgaug
+scikit-fuzzy
+opencv-python
